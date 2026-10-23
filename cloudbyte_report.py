@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """CloudByte Ops Reporter: summarise CloudByte's activity from the command line."""
 
+import csv
+
 
 def get_user(record):
     return record.split()[1]
@@ -33,6 +35,10 @@ def count_and_rank(records, get_key):
 def main():
     with open("cloudbyte_access.log") as f:
         records = [line for line in f]
+
+    # Read the staff roster into a {username: department} lookup.
+    with open("users.csv") as f:
+        dept_of = {row["username"]: row["department"] for row in csv.DictReader(f)}
 
     first = records[0].split()[0]
     last = records[-1].split()[0]
@@ -76,6 +82,17 @@ def main():
     print(f"Activity for {person}")
     for rank, (count, action) in enumerate(person_pairs, start=1):
         print(f"  {rank}. {action}: {count} events")
+
+    print()
+    dept_totals = {}
+    for count, user in user_pairs:
+        dept = dept_of[user]
+        dept_totals[dept] = dept_totals.get(dept, 0) + count
+    dept_pairs = [(count, dept) for dept, count in dept_totals.items()]
+    dept_pairs.sort(key=by_count_then_name)
+    print("Activity by department")
+    for rank, (count, dept) in enumerate(dept_pairs, start=1):
+        print(f"  {rank}. {dept}: {count} events")
 
 
 if __name__ == "__main__":
