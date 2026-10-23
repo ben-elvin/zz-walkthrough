@@ -15,6 +15,7 @@ It now ranks users by how active they are, listing the most active first.
 It now ranks three views, most active users, busiest hours, and activity by type, all through one shared function.
 It now filters as well as ranks, with a login-activity view and a per-user breakdown built from list comprehensions.
 It now reads the staff roster from users.csv and joins it to the log to report activity by department.
+It now parses the upgraded log with a regular expression and reports the most requested paths and the failed requests, by department and by path.
 
 ## What's coming
 

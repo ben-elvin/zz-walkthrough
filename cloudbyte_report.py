@@ -2,24 +2,31 @@
 """CloudByte Ops Reporter: summarise CloudByte's activity from the command line."""
 
 import csv
+import re
+
+LOG_LINE = r'(?P<date>\d{4}-\d{2}-\d{2})T(?P<time>\d{2}:\d{2}:\d{2}) (?P<user>[a-z]+) (?P<action>[a-z]+) "(?P<path>[^"]+)" (?P<status>\d+)'
 
 
 def get_user(record):
-    return record.split()[1]
+    return record["user"]
 
 
 def get_hour(record):
-    return record.split()[0][11:13]
+    return record["time"][:2]
 
 
 def get_action(record):
-    return record.split()[2]
+    return record["action"]
 
 
 def by_count_then_name(pair):
     """Sort key: busiest first, ties broken A-to-Z by name."""
     count, name = pair
     return (-count, name)
+
+
+def get_path(record):
+    return record["path"]
 
 
 def count_and_rank(records, get_key):
@@ -34,21 +41,19 @@ def count_and_rank(records, get_key):
 
 def main():
     with open("cloudbyte_access.log") as f:
-        records = [line for line in f]
+        records = [re.fullmatch(LOG_LINE, line.strip()).groupdict() for line in f]
 
     # Read the staff roster into a {username: department} lookup.
     with open("users.csv") as f:
         dept_of = {row["username"]: row["department"] for row in csv.DictReader(f)}
 
-    first = records[0].split()[0]
-    last = records[-1].split()[0]
+    first = records[0]
+    last = records[-1]
     print("CloudByte Access Report")
-    print(f"{len(records)} events from {first[:10]} {first[11:]} to {last[:10]} {last[11:]}")
+    print(f"{len(records)} events from {first["date"]} {first["time"]} to {last["date"]} {last["time"]}")
     print()
     for record in records:
-        fields = record.split()
-        ts = fields[0]
-        print(f"{ts[:10]} {ts[11:]}  {fields[1]} {fields[2]}")
+        print(f'{record["date"]} {record["time"]}  {record["user"]} {record["action"]}')
 
     print()
     user_pairs = count_and_rank(records, get_user)
@@ -93,6 +98,31 @@ def main():
     print("Activity by department")
     for rank, (count, dept) in enumerate(dept_pairs, start=1):
         print(f"  {rank}. {dept}: {count} events")
+
+    print()
+    path_pairs = count_and_rank(records, get_path)
+    print("Most requested paths")
+    for rank, (count, path) in enumerate(path_pairs, start=1):
+        print(f"  {rank}. {path}: {count} requests")
+
+    failures = [r for r in records if r["status"] != "200"]
+
+    print()
+    fail_dept_totals = {}
+    for r in failures:
+        dept = dept_of[r["user"]]
+        fail_dept_totals[dept] = fail_dept_totals.get(dept, 0) + 1
+    fail_dept_pairs = [(count, dept) for dept, count in fail_dept_totals.items()]
+    fail_dept_pairs.sort(key=by_count_then_name)
+    print("Failed requests by department")
+    for rank, (count, dept) in enumerate(fail_dept_pairs, start=1):
+        print(f"  {rank}. {dept}: {count} failed")
+
+    print()
+    fail_path_pairs = count_and_rank(failures, get_path)
+    print("Failed requests by path")
+    for rank, (count, path) in enumerate(fail_path_pairs, start=1):
+        print(f"  {rank}. {path}: {count} failed")
 
 
 if __name__ == "__main__":
