@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """CloudByte Ops Reporter: summarise CloudByte's activity from the command line."""
 
+import argparse
 import csv
+import logging
 import re
 
 LOG_LINE = r'(?P<date>\d{4}-\d{2}-\d{2})T(?P<time>\d{2}:\d{2}:\d{2}) (?P<user>[a-z]+) (?P<action>[a-z]+) "(?P<path>[^"]+)" (?P<status>\d+)'
+
+log = logging.getLogger("cloudbyte_report")
 
 
 def get_user(record):
@@ -40,11 +44,30 @@ def count_and_rank(records, get_key):
 
 
 def main():
-    with open("cloudbyte_access.log") as f:
-        records = [re.fullmatch(LOG_LINE, line.strip()).groupdict() for line in f]
+    parser = argparse.ArgumentParser(description="Summarise CloudByte's access log.")
+    parser.add_argument("log", nargs="?", default="cloudbyte_access.log", help="access log to read")
+    parser.add_argument("--roster", default="users.csv", help="staff roster CSV to join")
+    parser.add_argument("--user", help="single out one user's activity")
+    parser.add_argument("-v", "--verbose", action="store_true", help="show INFO-level detail")
+    args = parser.parse_args()
+
+    logging.basicConfig(
+        level=logging.INFO if args.verbose else logging.WARNING,
+        format="%(levelname)s: %(message)s",
+    )
+
+    records = []
+    with open(args.log) as f:
+        for lineno, line in enumerate(f, start=1):
+            m = re.fullmatch(LOG_LINE, line.strip())
+            if m is None:
+                log.warning("skipping line %d: %r does not match the log format", lineno, line.strip())
+                continue
+            records.append(m.groupdict())
+    log.info("loaded %d records from %s", len(records), args.log)
 
     # Read the staff roster into a {username: department} lookup.
-    with open("users.csv") as f:
+    with open(args.roster) as f:
         dept_of = {row["username"]: row["department"] for row in csv.DictReader(f)}
 
     first = records[0]
@@ -80,13 +103,16 @@ def main():
     for rank, (count, user) in enumerate(login_pairs, start=1):
         print(f"  {rank}. {user}: {count} events")
 
-    print()
-    person = "alice"
-    person_records = [r for r in records if get_user(r) == person]
-    person_pairs = count_and_rank(person_records, get_action)
-    print(f"Activity for {person}")
-    for rank, (count, action) in enumerate(person_pairs, start=1):
-        print(f"  {rank}. {action}: {count} events")
+    if args.user:
+        print()
+        person = args.user
+        person_records = [r for r in records if get_user(r) == person]
+        person_pairs = count_and_rank(person_records, get_action)
+        print(f"Activity for {person}")
+        for rank, (count, action) in enumerate(person_pairs, start=1):
+            print(f"  {rank}. {action}: {count} events")
+    else:
+        log.info("no --user given; skipping the per-user report")
 
     print()
     dept_totals = {}

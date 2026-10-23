@@ -7,6 +7,7 @@ Built across the Python chapter of the cloud bootcamp, one feature per section.
 
 ```
 python3 cloudbyte_report.py
+python3 cloudbyte_report.py --user alice -v
 ```
 
 It reads CloudByte's access log (`cloudbyte_access.log`) and prints an access report: a header
@@ -16,7 +17,4 @@ It now ranks three views, most active users, busiest hours, and activity by type
 It now filters as well as ranks, with a login-activity view and a per-user breakdown built from list comprehensions.
 It now reads the staff roster from users.csv and joins it to the log to report activity by department.
 It now parses the upgraded log with a regular expression and reports the most requested paths and the failed requests, by department and by path.
-
-## What's coming
-
-Future versions will report activity per department.
+It now runs from the command line: give it a log path to read, --user NAME for one person's breakdown, and -v for extra detail. A line it can't read is skipped and logged instead of stopping the run.
