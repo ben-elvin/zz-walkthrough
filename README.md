@@ -18,3 +18,4 @@ It now filters as well as ranks, with a login-activity view and a per-user break
 It now reads the staff roster from users.csv and joins it to the log to report activity by department.
 It now parses the upgraded log with a regular expression and reports the most requested paths and the failed requests, by department and by path.
 It now runs from the command line: give it a log path to read, --user NAME for one person's breakdown, and -v for extra detail. A line it can't read is skipped and logged instead of stopping the run.
+It now runs unattended on a Linux server, started every morning by cron; where it lives, what starts it and how to check on it are in [docs/deploy-notes.md](docs/deploy-notes.md).

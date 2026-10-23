@@ -73,7 +73,7 @@ def main():
     first = records[0]
     last = records[-1]
     print("CloudByte Access Report")
-    print(f"{len(records)} events from {first["date"]} {first["time"]} to {last["date"]} {last["time"]}")
+    print(f"{len(records)} events from {first['date']} {first['time']} to {last['date']} {last['time']}")
     print()
     for record in records:
         print(f'{record["date"]} {record["time"]}  {record["user"]} {record["action"]}')
