@@ -11,7 +11,8 @@ python3 cloudbyte_report.py
 
 It reads CloudByte's access log (`cloudbyte_access.log`) and prints an access report: a header
 with the event total and time span, then one tidy line per event.
+It now ranks users by how active they are, listing the most active first.
 
 ## What's coming
 
-Future versions will report activity per person and per department.
+Future versions will report activity per department.
